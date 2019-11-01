@@ -12,20 +12,16 @@ const signToken = id => {
   });
 };
 
-const createSendToken = (user, status, res) => {
+const createSendToken = (user, status, res, req) => {
   const token = signToken(user._id);
 
-  const cookieOptions = {
+  res.cookie('jwt', token, {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
-    secure: false,
+    secure: req.secure || req.headers['x-forwarded-proto' === 'https'],
     httpOnly: true
-  };
-
-  if (process.env.NODE_EV === 'production') cookieOptions.secure = true;
-
-  res.cookie('jwt', token, cookieOptions);
+  });
 
   user.password = undefined;
 
@@ -61,7 +57,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
   const url = `${req.protocol}://${req.get('host')}/me`;
   await new Email(newUser, url).sendWelcome();
 
-  createSendToken(newUser, 201, res);
+  createSendToken(newUser, 201, res, req);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -80,7 +76,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Inccorect email or password', 401));
   }
   // 3.  IF everything okay above send token to client
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, res, req);
 });
 
 //Create middleware function to check to check if user is logged in
@@ -226,7 +222,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   await user.save();
   // 3) Update the changedPAssword at property of the user
   // 4) Log the user in, send JWT
-  createSendToken(user, 201, res);
+  createSendToken(user, 201, res, req);
 });
 
 //Update pass for user already logged in
@@ -257,5 +253,5 @@ exports.updatePasword = catchAsync(async (req, res, next) => {
   await user.save();
   // 4) Log user in , send new JWT
 
-  createSendToken(user, 201, res);
+  createSendToken(user, 201, res, req);
 });
