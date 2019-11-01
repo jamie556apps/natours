@@ -17,6 +17,7 @@ const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const bookingRouter = require('./routes/bookingRoutes');
 const viewRouter = require('./routes/viewRoutes');
+const bookingController = require('./controllers/bookingController');
 
 // Start express app
 const app = express();
@@ -52,6 +53,8 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
+app.post('/webhook-checkou', express.raw(), bookingController.webhookCheckout);
+
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
@@ -83,7 +86,7 @@ app.use((req, res, next) => {
 
 app.use(compression());
 
-//2. ROUTE HANDLERS
+// Stirpe Webhook route
 
 //3. ROUTES
 
